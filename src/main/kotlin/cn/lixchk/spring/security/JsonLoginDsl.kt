@@ -61,8 +61,6 @@ class JsonLoginDsl {
 
 fun HttpSecurity.jsonLogin(formLoginConfiguration: JsonLoginDsl.() -> Unit) {
     val loginCustomizer = JsonLoginDsl().apply(formLoginConfiguration).get()
-    JsonLoginConfigurer().also {
-        this.apply(it)
-        loginCustomizer(it)
-    }
+    val loginConfigurer = getConfigurer(JsonLoginConfigurer::class.java) ?: apply(JsonLoginConfigurer())
+    loginCustomizer(loginConfigurer)
 }
