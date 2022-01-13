@@ -2,6 +2,7 @@ package cn.lixchk.spring.security
 
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectReader
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.security.authentication.AuthenticationManager
@@ -16,7 +17,7 @@ class JsonAuthenticationFilter : UsernamePasswordAuthenticationFilter {
             "${JsonAuthenticationFilter::class.java.packageName}.JSON_LOGIN_REQUEST"
     }
 
-    var loginRequestParser: LoginRequestParser = DefaultLoginRequestParser
+    var loginRequestParser: LoginRequestParser = DefaultLoginRequestParser()
 
     constructor() : super()
 
@@ -39,21 +40,24 @@ class JsonAuthenticationFilter : UsernamePasswordAuthenticationFilter {
             request.characterEncoding = Charsets.UTF_8.name()
 
         return loginRequestParser(request.reader)
+            .also { request.setAttribute(JSON_LOGIN_REQUEST, it) }
     }
 
     interface LoginRequestParser {
         operator fun invoke(requestReader: Reader): Map<String, String?>
     }
 
-    object DefaultLoginRequestParser : LoginRequestParser {
+    inner class DefaultLoginRequestParser : LoginRequestParser {
 
-        private val servletObjectReader: ObjectReader = jacksonObjectMapper().reader()
+        private val servletObjectReader: ObjectReader = jacksonObjectMapper()
+            .readerFor(object : TypeReference<Map<String, String?>>() {}) // TODO 查询相关文档，优化用法
             .withoutFeatures(JsonParser.Feature.AUTO_CLOSE_SOURCE)
 
         override fun invoke(requestReader: Reader): Map<String, String?> {
             return try {
                 servletObjectReader.readValue(requestReader)
             } catch (e: JsonProcessingException) {
+                logger.warn(e.message, e)
                 emptyMap()
             }
         }
