@@ -49,9 +49,7 @@ class JsonLoginDsl {
             failureUrl?.also { login.failureUrl(it) }
             loginProcessingUrl?.also { login.loginProcessingUrl(it) }
             permitAll?.also { login.permitAll(it) }
-            defaultSuccessUrlOption?.also {
-                login.defaultSuccessUrl(it.first, it.second)
-            }
+            defaultSuccessUrlOption?.also { login.defaultSuccessUrl(it.first, it.second) }
             authenticationSuccessHandler?.also { login.successHandler(it) }
             authenticationFailureHandler?.also { login.failureHandler(it) }
             authenticationDetailsSource?.also { login.authenticationDetailsSource(it) }
@@ -59,8 +57,9 @@ class JsonLoginDsl {
     }
 }
 
-fun HttpSecurity.jsonLogin(formLoginConfiguration: JsonLoginDsl.() -> Unit) {
+fun HttpSecurity.jsonLogin(formLoginConfiguration: JsonLoginDsl.() -> Unit): HttpSecurity {
     val loginCustomizer = JsonLoginDsl().apply(formLoginConfiguration).get()
     val loginConfigurer = getConfigurer(JsonLoginConfigurer::class.java) ?: apply(JsonLoginConfigurer())
     loginCustomizer(loginConfigurer)
+    return this
 }
